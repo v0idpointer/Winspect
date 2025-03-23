@@ -1,0 +1,51 @@
+/*
+    Winspect (Windows Inspect)
+    Copyright (c) 2025 V0idPointer
+*/
+
+using System;
+using System.IO;
+using System.Text;
+using Winspect.Formats.PE.Headers;
+
+namespace Winspect.Formats.PE;
+
+/// <summary>
+/// Represents a Portable Executable (PE) file.
+/// </summary>
+public class PortableExecutable {
+
+    /// <summary>
+    /// PE\0\0
+    /// </summary>
+    public static readonly string NtSignature = "PE\0\0";
+
+    public DosHeader DosHeader { get; private set; }
+    public string Signature { get; private set; }
+    public FileHeader FileHeader { get; private set; }
+    public OptionalHeader OptionalHeader { get; private set; }
+
+    public PortableExecutable(string filepath) {
+        
+        using (FileStream stream = new FileStream(filepath, FileMode.Open, FileAccess.Read)) {
+
+            Span<byte> data = new byte[64].AsSpan();
+            stream.ReadExactly(data);
+            this.DosHeader = new DosHeader(data);
+
+            stream.Position = this.DosHeader.Lfanew;
+            stream.ReadExactly(data[0..4]);
+            this.Signature = Encoding.ASCII.GetString(data[0..4]);
+
+            stream.ReadExactly(data[0..20]);
+            this.FileHeader = new FileHeader(data[0..20]);
+
+            data = new byte[this.FileHeader.SizeOfOptionalHeader].AsSpan();
+            stream.ReadExactly(data);
+            this.OptionalHeader = new OptionalHeader(data);
+
+        }
+
+    }
+
+}
