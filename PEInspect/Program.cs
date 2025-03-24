@@ -80,3 +80,20 @@ foreach (DirectoryEntry entry in pe.OptionalHeader.DataDirectories.Keys) {
     DataDirectory directory = pe.OptionalHeader.DataDirectories[entry];
     Console.WriteLine("{0}: RVA: {1:X}, Size: {2:X}", entry, directory.VirtualAddress, directory.Size);
 }
+
+Console.WriteLine("\n\t*** Section headers ***");
+foreach (SectionHeader header in pe.SectionHeaders) {
+
+    Console.WriteLine("Name: {0}", header.Name);
+    Console.WriteLine("PhysicalAddress/VirtualSize: {0:X}", header.VirtualSize);
+    Console.WriteLine("VirtualAddress: {0:X}", header.VirtualAddress);
+    Console.WriteLine("SizeOfRawData: {0:X}", header.SizeOfRawData);
+    Console.WriteLine("PointerToRawData: {0:X}", header.PointerToRawData);
+    Console.WriteLine("PointerToRelocations: {0:X}", header.PointerToRelocations);
+    Console.WriteLine("PointerToLinenumbers: {0:X}", header.PointerToLinenumbers);
+    Console.WriteLine("NumberOfRelocations: {0:X}", header.NumberOfRelocations);
+    Console.WriteLine("NumberOfLinenumbers: {0:X}", header.NumberOfLinenumbers);
+    Console.WriteLine("Characteristics: {0}", header.Characteristics);
+    Console.WriteLine();
+
+}

@@ -24,6 +24,7 @@ public class PortableExecutable {
     public string Signature { get; private set; }
     public FileHeader FileHeader { get; private set; }
     public OptionalHeader OptionalHeader { get; private set; }
+    public SectionHeader[] SectionHeaders { get; private set; }
 
     public PortableExecutable(string filepath) {
         
@@ -43,6 +44,14 @@ public class PortableExecutable {
             data = new byte[this.FileHeader.SizeOfOptionalHeader].AsSpan();
             stream.ReadExactly(data);
             this.OptionalHeader = new OptionalHeader(data);
+
+            data = new byte[40].AsSpan();
+
+            this.SectionHeaders = new SectionHeader[this.FileHeader.NumberOfSections];
+            for (int i = 0; i < this.FileHeader.NumberOfSections; ++i) {
+                stream.ReadExactly(data);
+                this.SectionHeaders[i] = new SectionHeader(data);
+            }
 
         }
 
