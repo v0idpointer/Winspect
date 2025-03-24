@@ -23,6 +23,9 @@ public class FileHeader {
 
     public FileHeader(ReadOnlySpan<byte> data) {
 
+        if (data.Length < 20)
+            throw new ArgumentException("The specified buffer is too small to contain the IMAGE_FILE_HEADER structure.", nameof(data));
+
         this.Machine = (Machine)(BinaryPrimitives.ReadUInt16LittleEndian(data[0..2]));
         this.NumberOfSections = BinaryPrimitives.ReadUInt16LittleEndian(data[2..4]);
         this.TimeDateStamp = BinaryPrimitives.ReadUInt32LittleEndian(data[4..8]);

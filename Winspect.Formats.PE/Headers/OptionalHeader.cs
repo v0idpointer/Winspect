@@ -64,7 +64,20 @@ public class OptionalHeader {
 
     public OptionalHeader(ReadOnlySpan<byte> data) {
 
+        if (data.Length < 2)
+            throw new ArgumentException(
+                "The specified buffer is too small to contain the IMAGE_OPTIONAL_HEADER32 or the IMAGE_OPTIONAL_HEADER64 structure.", 
+                nameof(data)
+            );
+
         this.Magic = BinaryPrimitives.ReadUInt16LittleEndian(data[0..2]);
+        
+        if ((this.Magic == OptionalHeader.Pe32Signature) && (data.Length < 224))
+            throw new ArgumentException("The specified buffer is too small to contain the IMAGE_OPTIONAL_HEADER32 structure.", nameof(data));
+
+        if ((this.Magic == OptionalHeader.Pe32PlusSignature) && (data.Length < 240))
+            throw new ArgumentException("The specified buffer is too small to contain the IMAGE_OPTIONAL_HEADER64 structure.", nameof(data));
+
         this.MajorLinkerVersion = data[2];
         this.MinorLinkerVersion = data[3];
         this.SizeOfCode = BinaryPrimitives.ReadUInt32LittleEndian(data[4..8]);

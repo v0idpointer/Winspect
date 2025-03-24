@@ -18,6 +18,9 @@ public class DataDirectory {
 
     public DataDirectory(ReadOnlySpan<byte> data) {
         
+        if (data.Length < 8)
+            throw new ArgumentException("The specified buffer is too small to contain the IMAGE_DATA_DIRECTORY structure.", nameof(data));
+        
         this.VirtualAddress = BinaryPrimitives.ReadUInt32LittleEndian(data[0..4]);
         this.Size = BinaryPrimitives.ReadUInt32LittleEndian(data[4..8]);
 

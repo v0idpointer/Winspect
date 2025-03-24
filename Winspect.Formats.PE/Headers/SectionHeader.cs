@@ -28,6 +28,9 @@ public class SectionHeader {
 
     public SectionHeader(ReadOnlySpan<byte> data) {
         
+        if (data.Length < 40)
+            throw new ArgumentException("The specified buffer is too small to contain the IMAGE_SECTION_HEADER structure.", nameof(data));
+
         this.Name = Encoding.UTF8.GetString(data[0..8]).Replace("\0", string.Empty).Trim();
         this.PhysicalAddress = BinaryPrimitives.ReadUInt32LittleEndian(data[8..12]);
         this.VirtualAddress = BinaryPrimitives.ReadUInt32LittleEndian(data[12..16]);

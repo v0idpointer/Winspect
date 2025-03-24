@@ -105,6 +105,9 @@ public class DosHeader {
 
     public DosHeader(ReadOnlySpan<byte> data) {
 
+        if (data.Length < 64)
+            throw new ArgumentException("The specified buffer is too small to contain the IMAGE_DOS_HEADER structure.", nameof(data));
+
         this.Magic = BinaryPrimitives.ReadUInt16LittleEndian(data[0..2]);
         this.Cblp = BinaryPrimitives.ReadUInt16LittleEndian(data[2..4]);
         this.Cp = BinaryPrimitives.ReadUInt16LittleEndian(data[4..6]);
