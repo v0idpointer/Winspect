@@ -44,4 +44,54 @@ public class SectionHeader {
 
     }
 
+    /// <summary>
+    /// Searches for a section in the provided array of section headers that contains
+    /// the specified Relative Virtual Address (RVA).
+    /// </summary>
+    /// <param name="sections">
+    /// An array of <see cref="SectionHeader" /> objects to search through.
+    /// </param>
+    /// <param name="rva">
+    /// A Relative Virtual Address (RVA).
+    /// </param>
+    /// <returns>
+    /// A <see cref="SectionHeader" /> object if a matching section is found; otherwise, <c>null</c>.
+    /// </returns>
+    public static SectionHeader? FindSection(SectionHeader[] sections, uint rva) {
+
+        foreach (SectionHeader section in sections) {
+            
+            uint size = ((section.VirtualSize == 0) ? section.SizeOfRawData : section.VirtualSize);
+            if ((rva >= section.VirtualAddress) && (rva < (section.VirtualAddress + size)))
+                return section;
+
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Converts a Relative Virtual Address (RVA) to a file offset.
+    /// </summary>
+    /// <param name="sections">
+    /// An array of <see cref="SectionHeader" /> objects.
+    /// </param>
+    /// <param name="rva">
+    /// A Relative Virtual Address (RVA).
+    /// </param>
+    /// <returns>
+    /// A file offset.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// The specified RVA is not a part of any section.
+    /// </exception>
+    public static uint RVAToFileOffset(SectionHeader[] sections, uint rva) {
+
+        SectionHeader? section = SectionHeader.FindSection(sections, rva);
+        if (section == null) 
+            throw new ArgumentException("The specified RVA is not a part of any section.", nameof(rva));
+
+        return (rva - section.VirtualAddress + section.PointerToRawData);
+    }
+
 }

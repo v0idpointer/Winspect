@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Winspect.Formats.PE.Directories;
 using Winspect.Formats.PE.Headers;
 
 namespace Winspect.Formats.PE;
@@ -25,6 +26,8 @@ public class PortableExecutable {
     public FileHeader FileHeader { get; private set; }
     public OptionalHeader OptionalHeader { get; private set; }
     public SectionHeader[] SectionHeaders { get; private set; }
+
+    public ExportDirectory? ExportDirectory { get; private set; }
 
     public PortableExecutable(string filepath) {
         
@@ -53,8 +56,19 @@ public class PortableExecutable {
                 this.SectionHeaders[i] = new SectionHeader(data);
             }
 
+            this.ExportDirectory = this.LoadDataDirectory<ExportDirectory>(stream);
+
         }
 
+    }
+
+    private T? LoadDataDirectory<T>(Stream stream) where T : class, IDirectory<T> {
+
+        DataDirectory directory = this.OptionalHeader.DataDirectories[T.DirectoryEntry];
+        if ((directory.VirtualAddress == 0) && (directory.Size == 0))
+            return null;
+
+        return T.LoadDirectory(this, stream);
     }
 
 }

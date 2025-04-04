@@ -1,5 +1,6 @@
 ﻿using System;
 using Winspect.Formats.PE;
+using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Headers;
 
 // See https://aka.ms/new-console-template for more information
@@ -95,5 +96,46 @@ foreach (SectionHeader header in pe.SectionHeaders) {
     Console.WriteLine("NumberOfLinenumbers: {0:X}", header.NumberOfLinenumbers);
     Console.WriteLine("Characteristics: {0}", header.Characteristics);
     Console.WriteLine();
+
+}
+
+if (pe.ExportDirectory != null) {
+
+    Console.WriteLine("\n\t*** Export directory ***");
+
+    Console.WriteLine("Characteristics: {0:X}", pe.ExportDirectory.Characteristics);
+    Console.WriteLine("TimeDateStamp: {0:X}", pe.ExportDirectory.TimeDateStamp);
+    Console.WriteLine("MajorVersion: {0:X}", pe.ExportDirectory.MajorVersion);
+    Console.WriteLine("MinorVersion: {0:X}", pe.ExportDirectory.MinorVersion);
+    Console.WriteLine("Name: {0:X} ({1})", pe.ExportDirectory.Name.RVA, pe.ExportDirectory.Name.Name);
+    Console.WriteLine("Base: {0:X}", pe.ExportDirectory.Base);
+    Console.WriteLine("NumberOfFunctions: {0:X}", pe.ExportDirectory.NumberOfFunctions);
+    Console.WriteLine("NumberOfNames: {0:X}", pe.ExportDirectory.NumberOfNames);
+    Console.WriteLine("AddressOfFunctions: {0:X}", pe.ExportDirectory.AddressOfFunctions);
+    Console.WriteLine("AddressOfNames: {0:X}", pe.ExportDirectory.AddressOfNames);
+    Console.WriteLine("AddressOfNameOrdinals: {0:X}", pe.ExportDirectory.AddressOfNameOrdinals);
+
+    if (pe.ExportDirectory.Exports != null) {
+
+        Console.WriteLine("\nOrdinal RVA Name (RVA) Hint Forwarder");
+
+        foreach (ExportedFunction export in pe.ExportDirectory.Exports.Values) {
+        
+            Console.Write("{0:X} {1:X} ", export.Ordinal, export.FunctionRVA);
+
+            if (export.Name.HasValue) Console.Write("{0} ({1:X}) ", export.Name.Value.Name, export.Name.Value.RVA);
+            else Console.Write("/ (/) ");
+
+            if (export.Hint.HasValue) Console.Write("{0} ", export.Hint.Value);
+            else Console.Write("/ ");
+            
+            if (export.Forwarder != null) Console.Write("{0}", export.Forwarder);
+            else Console.Write("/");
+
+            Console.WriteLine();
+
+        }
+
+    }
 
 }
