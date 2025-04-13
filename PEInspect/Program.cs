@@ -1,6 +1,7 @@
 ﻿using System;
 using Winspect.Formats.PE;
 using Winspect.Formats.PE.Directories.Export;
+using Winspect.Formats.PE.Directories.Import;
 using Winspect.Formats.PE.Headers;
 
 // See https://aka.ms/new-console-template for more information
@@ -131,6 +132,39 @@ if (pe.ExportDirectory != null) {
             
             if (export.Forwarder != null) Console.Write("{0}", export.Forwarder);
             else Console.Write("/");
+
+            Console.WriteLine();
+
+        }
+
+    }
+
+}
+
+if (pe.ImportDirectory != null) {
+
+    Console.WriteLine("\n\t*** Import Directory ***\n");
+
+    if (pe.ImportDirectory.Imports != null) {
+
+        foreach ((string name, ImportedLibrary import) in pe.ImportDirectory.Imports) {
+
+            Console.WriteLine("Characteristics/OriginalFirstThunk: {0:X}", import.Characteristics);
+            Console.WriteLine("TimeDateStamp: {0:X}", import.TimeDateStamp);
+            Console.WriteLine("ForwarderChain: {0:X}", import.ForwarderChain);
+            Console.WriteLine("Name: {0:X} ({1})", import.Name.RVA, import.Name.Name);
+            Console.WriteLine("FirstThunk: {0:X}", import.FirstThunk);
+
+            if (import.Imports != null) {
+
+                Console.WriteLine();
+
+                foreach (ImportedFunction fn in import.Imports) {
+                    if (fn.Ordinal.HasValue) Console.WriteLine("\tOrdinal {0} ({0:X})", fn.Ordinal);
+                    else Console.WriteLine("\t{0} ({1:X})", fn.Name, fn.Hint);
+                }
+
+            }
 
             Console.WriteLine();
 

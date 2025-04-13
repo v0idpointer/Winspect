@@ -28,6 +28,7 @@ public class PortableExecutable {
     public SectionHeader[] SectionHeaders { get; private set; }
 
     public ExportDirectory? ExportDirectory { get; private set; }
+    public ImportDirectory? ImportDirectory { get; private set; }
 
     public PortableExecutable(string filepath) {
         
@@ -57,6 +58,7 @@ public class PortableExecutable {
             }
 
             this.ExportDirectory = this.LoadDataDirectory<ExportDirectory>(stream);
+            this.ImportDirectory = this.LoadDataDirectory<ImportDirectory>(stream);
 
         }
 
