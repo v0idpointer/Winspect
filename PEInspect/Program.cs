@@ -9,6 +9,7 @@ using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Winspect.Formats.PE;
 using Winspect.Formats.PE.Directories;
 using Winspect.Formats.PE.Directories.Export;
@@ -40,10 +41,17 @@ internal class Program {
 
     private static int Handler(FileInfo file, bool headers, bool exports, bool imports) {
 
-        PortableExecutable pe = new PortableExecutable(file.FullName);
+        PortableExecutable pe;
+
+        try { pe = new PortableExecutable(file.FullName); }
+        catch (Exception ex) {
+            Console.WriteLine("*** {0}", ex.Message);
+            return -1;
+        }
 
         if (headers) {
             Program.Inspect(pe.DosHeader);
+            Program.Inspect(pe.Signature);
             Program.Inspect(pe.FileHeader);
             Program.Inspect(pe.OptionalHeader);
             Program.Inspect(pe.SectionHeaders);
@@ -84,6 +92,20 @@ internal class Program {
         Console.WriteLine("{0,-17}{1:X4}", "e_oemid", dosHeader.Oemid);
         Console.WriteLine("{0,-17}{1:X4}", "e_oeminfo", dosHeader.Oeminfo);
         Console.WriteLine("{0,-13}{1:X8}", "e_lfanew", dosHeader.Lfanew);
+        Console.WriteLine();
+
+    }
+
+    private static void Inspect(string ntSignature) {
+
+        Console.WriteLine("\tNT signature\n");
+
+        byte[] bytes = Encoding.ASCII.GetBytes(ntSignature);
+        foreach (byte b in bytes) Console.Write("{0,-3:X2}", b);
+
+        if (ntSignature == PortableExecutable.NtSignature) Console.WriteLine("{0,8}", "PE\\0\\0");
+        else Console.WriteLine();
+
         Console.WriteLine();
 
     }

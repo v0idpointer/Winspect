@@ -38,9 +38,15 @@ public class PortableExecutable {
             stream.ReadExactly(data);
             this.DosHeader = new DosHeader(data);
 
+            if (this.DosHeader.Magic != DosHeader.DosSignature)
+                throw new BadPortableExecutableException("Bad PE image: invalid DOS signature.");
+
             stream.Position = this.DosHeader.Lfanew;
             stream.ReadExactly(data[0..4]);
             this.Signature = Encoding.ASCII.GetString(data[0..4]);
+
+            if (this.Signature != PortableExecutable.NtSignature)
+                throw new BadPortableExecutableException("Bad PE image: invalid NT signature.");
 
             stream.ReadExactly(data[0..20]);
             this.FileHeader = new FileHeader(data[0..20]);
