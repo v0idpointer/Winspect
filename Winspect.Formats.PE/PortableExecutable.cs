@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text;
 using Winspect.Formats.PE.Directories;
+using Winspect.Formats.PE.Directories.Resource;
 using Winspect.Formats.PE.Headers;
 
 namespace Winspect.Formats.PE;
@@ -29,6 +30,7 @@ public class PortableExecutable {
 
     public ExportDirectory? ExportDirectory { get; private set; }
     public ImportDirectory? ImportDirectory { get; private set; }
+    public ResourceDirectory? ResourceDirectory { get; private set; }
 
     public PortableExecutable(string filepath) {
         
@@ -65,6 +67,7 @@ public class PortableExecutable {
 
             this.ExportDirectory = this.LoadDataDirectory<ExportDirectory>(stream);
             this.ImportDirectory = this.LoadDataDirectory<ImportDirectory>(stream);
+            this.ResourceDirectory = this.LoadDataDirectory<ResourceDirectory>(stream);
 
         }
 
