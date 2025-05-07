@@ -11,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Winspect.Formats.PE;
-using Winspect.Formats.PE.Directories;
 using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Directories.Import;
 using Winspect.Formats.PE.Directories.Resource;

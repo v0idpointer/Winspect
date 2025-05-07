@@ -38,10 +38,10 @@ public class ResourceDataEntry {
     public Span<byte> ReadData() {
         
         if (this._pe == null) 
-            throw new InvalidOperationException("Resource directory entry not fully initialized.");
+            throw new InvalidOperationException("Resource data entry not fully initialized.");
 
         if (this._pe.Stream == null)
-            throw new InvalidOperationException("PortableExecutable's Stream is null.");
+            throw new InvalidOperationException("Cannot read: stream not open.");
 
         Span<byte> data = new byte[this.Size].AsSpan();
         this._pe.Stream.Position = SectionHeader.RVAToFileOffset(this._pe.SectionHeaders, this.OffsetToData);
