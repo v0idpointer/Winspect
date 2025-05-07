@@ -15,6 +15,7 @@ namespace Winspect.Formats.PE.Directories.Resource;
 /// </summary>
 public class ResourceDataEntry {
 
+    private PortableExecutable? _pe;
     public ResourceDirectory? Parent { get; private set; }
 
     public uint OffsetToData { get; private set; }
@@ -34,6 +35,21 @@ public class ResourceDataEntry {
 
     }
 
+    public Span<byte> ReadData() {
+        
+        if (this._pe == null) 
+            throw new InvalidOperationException("Resource directory entry not fully initialized.");
+
+        if (this._pe.Stream == null)
+            throw new InvalidOperationException("PortableExecutable's Stream is null.");
+
+        Span<byte> data = new byte[this.Size].AsSpan();
+        this._pe.Stream.Position = SectionHeader.RVAToFileOffset(this._pe.SectionHeaders, this.OffsetToData);
+        this._pe.Stream.ReadExactly(data);
+
+        return data;
+    }
+
     public static ResourceDataEntry LoadEntry(ResourceDirectory parent, PortableExecutable pe, Stream stream, uint rva, uint offset) {
 
         Span<byte> data = new byte[16].AsSpan();
@@ -42,6 +58,7 @@ public class ResourceDataEntry {
 
         ResourceDataEntry dataEntry = new ResourceDataEntry(data);
         dataEntry.Parent = parent;
+        dataEntry._pe = pe;
 
         return dataEntry;
     }
