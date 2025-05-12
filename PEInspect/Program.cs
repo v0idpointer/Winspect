@@ -11,9 +11,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Winspect.Formats.PE;
-using Winspect.Formats.PE.Directories;
 using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Directories.Import;
+using Winspect.Formats.PE.Directories.Resource;
 using Winspect.Formats.PE.Headers;
 
 internal class Program {
@@ -31,7 +31,8 @@ internal class Program {
         rootCommand.AddArgument(new Argument<FileInfo>("file", "The PE file to inspect"));
         rootCommand.AddOption(new Option<bool>("--headers", "Inspect the PE headers"));
         rootCommand.AddOption(new Option<bool>("--exports", "Inspect the export directory"));
-        rootCommand.AddOption(new Option<bool>("--imports", "Inspect the import directory")); 
+        rootCommand.AddOption(new Option<bool>("--imports", "Inspect the import directory"));
+        rootCommand.AddOption(new Option<bool>("--resources", "Inspect the resource directory"));
         rootCommand.AddOption(new Option<bool>("--nologo", "Suppress the startup logo"));
         rootCommand.Handler = CommandHandler.Create(Program.Handler);
 
@@ -39,7 +40,7 @@ internal class Program {
         return rootCommand.Invoke(args);
     }
 
-    private static int Handler(FileInfo file, bool headers, bool exports, bool imports) {
+    private static int Handler(FileInfo file, bool headers, bool exports, bool imports, bool resources) {
 
         PortableExecutable pe;
 
@@ -62,6 +63,11 @@ internal class Program {
 
         if (imports && (pe.ImportDirectory != null))
             Program.Inspect(pe.ImportDirectory);
+
+        if (resources && (pe.ResourceDirectory != null)) {
+            Program.Inspect(pe.ResourceDirectory);
+            Program.InspectResourceDirectoryTree(pe);
+        }
 
         return 0;
     }
@@ -509,6 +515,106 @@ internal class Program {
             }
 
             Console.WriteLine();
+
+        }
+
+    }
+
+    private static void Inspect(ResourceDirectory resourceDirectory) {
+
+        Console.WriteLine("\tResource directory\n");
+
+        Console.WriteLine("{0,-23}{1:X8}", "Characteristics", resourceDirectory.Characteristics);
+        Console.WriteLine("{0,-23}{1:X8}", "TimeDateStamp", resourceDirectory.TimeDateStamp);
+        Console.WriteLine("{0,-27}{1:X4}", "MajorVersion", resourceDirectory.MajorVersion);
+        Console.WriteLine("{0,-27}{1:X4}", "MinorVersion", resourceDirectory.MinorVersion);
+        Console.WriteLine("{0,-23}{1:X8}", "NumberOfNamedEntries", resourceDirectory.NumberOfNamedEntries);
+        Console.WriteLine("{0,-23}{1:X8}", "NumberOfIdEntries", resourceDirectory.NumberOfIdEntries);
+        Console.WriteLine();
+
+    }
+
+    private static Dictionary<ResourceId, string> s_resourceTypes = new Dictionary<ResourceId, string>() {
+
+        { ResourceType.Cursor, "RT_CURSOR" },
+        { ResourceType.Bitmap, "RT_BITMAP" },
+        { ResourceType.Icon, "RT_ICON" },
+        { ResourceType.Menu, "RT_MENU" },
+        { ResourceType.Dialog, "RT_DIALOG" },
+        { ResourceType.String, "RT_STRING" },
+        { ResourceType.FontDir, "RT_FONTDIR" },
+        { ResourceType.Font, "RT_FONT" },
+        { ResourceType.Accelerator, "RT_ACCELERATOR" },
+        { ResourceType.RcData, "RT_RCDATA" },
+        { ResourceType.MessageTable, "RT_MESSAGETABLE" },
+        { ResourceType.GroupCursor, "RT_GROUP_CURSOR" },
+        { ResourceType.GroupIcon, "RT_GROUP_ICON" },
+        { ResourceType.Version, "RT_VERSION" },
+        { ResourceType.DlgInclude, "RT_DLGINCLUDE" },
+        { ResourceType.PlugPlay, "RT_PLUGPLAY" },
+        { ResourceType.Vxd, "RT_VXD" },
+        { ResourceType.AniCursor, "RT_ANICURSOR" },
+        { ResourceType.AniIcon, "RT_ANIICON" },
+        { ResourceType.Html, "RT_HTML" },
+        { ResourceType.Manifest, "RT_MANIFEST" },
+
+    };
+
+    // horrible.
+    private static void InspectResourceDirectoryTree(PortableExecutable pe) {
+        
+        ResourceId[]? types = pe.GetResourceTypes();
+        if (types == null) return;
+
+        Console.WriteLine("   Root");
+
+        for (int i = 0; i < types.Length; ++i) {
+
+            if (i == (types.Length - 1)) Console.Write("   └── ");
+            else Console.Write("   ├── ");
+
+            ResourceId type = types[i];
+            string str = Program.s_resourceTypes.GetValueOrDefault(
+                type, 
+                (type.NumericalId.HasValue ? string.Format("{0:X4}", type.NumericalId.Value) : type.ToString())
+            );
+
+            Console.WriteLine("{0}", str);
+
+            ResourceId[]? ids = pe.GetResourceIds(types[i]);
+            if (ids == null) continue;
+
+            for (int j = 0; j < ids.Length; ++j) {
+
+                if (j == (ids.Length - 1)) {
+                    if (i == (types.Length - 1)) Console.Write("       └── ");
+                    else Console.Write("   │   └── ");
+                }
+                else Console.Write("   │   ├── ");
+
+                ResourceId id = ids[j];
+                str = (id.NumericalId.HasValue ? string.Format("{0:X4}", id.NumericalId.Value) : id.ToString());
+                Console.WriteLine("{0}", str);
+
+                ushort[]? languages = pe.GetResourceLanguages(ids[j], types[i]);
+                if (languages == null) continue;
+
+                for (int k = 0; k < languages.Length; ++k) {
+
+                    if (k == (languages.Length - 1)) {
+                        if (i == (types.Length - 1)) Console.Write("           └── ");
+                        else if (j == (ids.Length - 1)) Console.Write("   │       └── ");
+                        else Console.Write("   │   │   └── ");
+                    }
+                    else if (i == (types.Length - 1)) Console.Write("           ├── ");
+                    else if (j == (ids.Length - 1)) Console.Write("   |       ├── ");
+                    else Console.Write("   │   │   ├── ");
+
+                    Console.WriteLine("{0:X4}", languages[k]);
+
+                }
+
+            }
 
         }
 

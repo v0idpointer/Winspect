@@ -8,10 +8,9 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Headers;
 
-namespace Winspect.Formats.PE.Directories;
+namespace Winspect.Formats.PE.Directories.Export;
 
 /// <summary>
 /// Represents the IMAGE_EXPORT_DIRECTORY structure.

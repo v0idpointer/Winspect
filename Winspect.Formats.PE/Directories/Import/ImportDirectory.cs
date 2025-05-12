@@ -6,10 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Winspect.Formats.PE.Directories.Import;
 using Winspect.Formats.PE.Headers;
 
-namespace Winspect.Formats.PE.Directories;
+namespace Winspect.Formats.PE.Directories.Import;
 
 public class ImportDirectory : IDirectory<ImportDirectory> {
 
