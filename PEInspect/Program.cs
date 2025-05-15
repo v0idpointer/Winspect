@@ -590,6 +590,7 @@ internal class Program {
                     if (i == (types.Length - 1)) Console.Write("       └── ");
                     else Console.Write("   │   └── ");
                 }
+                else if (i == (types.Length - 1)) Console.Write("       ├── ");
                 else Console.Write("   │   ├── ");
 
                 ResourceId id = ids[j];
@@ -602,7 +603,10 @@ internal class Program {
                 for (int k = 0; k < languages.Length; ++k) {
 
                     if (k == (languages.Length - 1)) {
-                        if (i == (types.Length - 1)) Console.Write("           └── ");
+                        if (i == (types.Length - 1)) {
+                            if (j != (ids.Length - 1)) Console.Write("       │   └── ");
+                            else Console.Write("           └── ");
+                        }
                         else if (j == (ids.Length - 1)) Console.Write("   │       └── ");
                         else Console.Write("   │   │   └── ");
                     }
