@@ -59,23 +59,31 @@ internal class Program {
     private static void DiffExports(ExportDirectory? old, ExportDirectory? @new) {
 
         Console.WriteLine("\tExports diff\n");
-        Console.WriteLine("   S   Ord.   Name\n");
 
         ExportDiff diff = ExportDirectory.Diff(old, @new);
-        foreach ((ExportName name, DiffStatus status) in diff.Changes) {
 
-            if (status == DiffStatus.Unchanged) continue;
+        if (!diff.HasChanges) Console.WriteLine("   No changes.");
+        else {
 
-            char symbol = status switch {
-                DiffStatus.Added => '+',
-                DiffStatus.Removed => '-',
-                DiffStatus.Modified => '*',
-                _ => ' ',
-            };
+            Console.WriteLine("   S   Ord.   Name\n");
+            foreach ((ExportName name, DiffStatus status) in diff.Changes) {
 
-            Console.WriteLine("   {0,-4}{1,-7:X4}{2}", symbol, name.Ordinal, name.Name);
+                if (status == DiffStatus.Unchanged) continue;
+
+                char symbol = status switch {
+                    DiffStatus.Added => '+',
+                    DiffStatus.Removed => '-',
+                    DiffStatus.Modified => '*',
+                    _ => ' ',
+                };
+
+                Console.WriteLine("   {0,-4}{1,-7:X4}{2}", symbol, name.Ordinal, name.Name);
+
+            }
 
         }
+
+        Console.WriteLine();
 
     }
 

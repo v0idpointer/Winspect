@@ -24,6 +24,22 @@ public class ExportDiff {
 
     public Dictionary<ExportName, DiffStatus> Changes { get; private set; }
 
+    public bool HasChanges {
+        
+        get {
+            
+            if (this.Changes.Count == 0) 
+                return true;
+
+            foreach ((ExportName _, DiffStatus status) in this.Changes)
+                if (status != DiffStatus.Unchanged) 
+                    return true;
+
+            return false;
+        }
+
+    }
+
     public ExportDiff(ExportDirectory? a, ExportDirectory? b) {
 
         this.Changes = new Dictionary<ExportName, DiffStatus>(new MyEqualityComparer());
