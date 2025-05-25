@@ -16,7 +16,7 @@ namespace Winspect.Formats.PE.Directories.Export;
 /// <summary>
 /// Represents the IMAGE_EXPORT_DIRECTORY structure.
 /// </summary>
-public class ExportDirectory : IDirectory<ExportDirectory>, IDiffable<ExportDirectory, ExportDiff> {
+public class ExportDirectory : IDirectory<ExportDirectory>, IDiffable<ExportDirectory, ExportsDiff> {
 
     public uint Characteristics { get; private set; }
     public uint TimeDateStamp { get; private set; }
@@ -129,8 +129,8 @@ public class ExportDirectory : IDirectory<ExportDirectory>, IDiffable<ExportDire
         return exportDirectory;
     }
 
-    public static ExportDiff Diff(ExportDirectory? a, ExportDirectory? b) {
-        return new ExportDiff(a, b);
+    public static ExportsDiff Diff(ExportDirectory? a, ExportDirectory? b) {
+        return new ExportsDiff(a, b);
     }
 
 }

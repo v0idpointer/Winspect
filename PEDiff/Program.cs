@@ -60,7 +60,7 @@ internal class Program {
 
         Console.WriteLine("\tExports diff\n");
 
-        ExportDiff diff = ExportDirectory.Diff(old, @new);
+        ExportsDiff diff = ExportDirectory.Diff(old, @new);
 
         if (!diff.HasChanges) Console.WriteLine("   No changes.");
         else {

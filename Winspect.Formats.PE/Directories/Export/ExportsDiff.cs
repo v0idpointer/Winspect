@@ -8,19 +8,10 @@ using Winspect.Common;
 
 namespace Winspect.Formats.PE.Directories.Export;
 
-public class ExportDiff {
-
-    private class MyEqualityComparer : IEqualityComparer<ExportName> {
-
-        public bool Equals(ExportName x, ExportName y) {
-            return (x.Equals(y));
-        }
-
-        public int GetHashCode(ExportName obj) {
-            return obj.GetHashCode();
-        }
-
-    }
+/// <summary>
+/// Represents a comparison of export symbols from two PE files.
+/// </summary>
+public class ExportsDiff {
 
     public Dictionary<ExportName, DiffStatus> Changes { get; private set; }
 
@@ -40,9 +31,9 @@ public class ExportDiff {
 
     }
 
-    public ExportDiff(ExportDirectory? a, ExportDirectory? b) {
+    public ExportsDiff(ExportDirectory? a, ExportDirectory? b) {
 
-        this.Changes = new Dictionary<ExportName, DiffStatus>(new MyEqualityComparer());
+        this.Changes = new Dictionary<ExportName, DiffStatus>();
 
         if ((a != null) && (a.Exports != null)) {
             foreach ((ushort _, ExportedFunction export) in a.Exports) {
