@@ -4,6 +4,7 @@
 */
 
 using System;
+using Winspect.Formats.PE.Directories.Import;
 
 namespace Winspect.Formats.PE.Directories.Export;
 
@@ -40,6 +41,12 @@ public struct ExportName {
     public static ExportName GetExportName(ExportedFunction export) {
         if (export.Name.HasValue) return export.Name.Value.Name;
         else return export.Ordinal;
+    }
+
+    public static ExportName GetExportName(ImportedFunction import) {
+        if (import.Name != null) return import.Name;
+        else if (import.Ordinal.HasValue) return import.Ordinal.Value;
+        else throw new ArgumentException("Bad import.", nameof(import));
     }
 
 }

@@ -6,11 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Winspect.Common;
 using Winspect.Formats.PE.Headers;
 
 namespace Winspect.Formats.PE.Directories.Import;
 
-public class ImportDirectory : IDirectory<ImportDirectory> {
+public class ImportDirectory : IDirectory<ImportDirectory>, IDiffable<ImportDirectory, ImportsDiff> {
 
     public Dictionary<string, ImportedLibrary>? Imports { get; private set; }
 
@@ -42,6 +43,10 @@ public class ImportDirectory : IDirectory<ImportDirectory> {
         }
 
         return importDirectory;
+    }
+
+    public static ImportsDiff Diff(ImportDirectory? a, ImportDirectory? b) {
+        return new ImportsDiff(a, b);
     }
 
 }

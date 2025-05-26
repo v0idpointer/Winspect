@@ -18,9 +18,6 @@ public class ExportsDiff {
     public bool HasChanges {
         
         get {
-            
-            if (this.Changes.Count == 0) 
-                return true;
 
             foreach ((ExportName _, DiffStatus status) in this.Changes)
                 if (status != DiffStatus.Unchanged) 

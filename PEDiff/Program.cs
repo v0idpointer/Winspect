@@ -4,6 +4,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using System.IO;
@@ -11,6 +12,7 @@ using System.Linq;
 using Winspect.Common;
 using Winspect.Formats.PE;
 using Winspect.Formats.PE.Directories.Export;
+using Winspect.Formats.PE.Directories.Import;
 
 internal class Program {
 
@@ -27,6 +29,7 @@ internal class Program {
         rootCommand.AddArgument(new Argument<FileInfo>("old", "The previous version of the PE file"));
         rootCommand.AddArgument(new Argument<FileInfo>("new", "The updated version of the PE file"));
         rootCommand.AddOption(new Option<bool>("--exports", "Compares the exported symbols between the two PE files"));
+        rootCommand.AddOption(new Option<bool>("--imports", "Compares the imported symbols between the two PE files"));
         rootCommand.AddOption(new Option<bool>("--nologo", "Suppress the startup logo"));
         rootCommand.Handler = CommandHandler.Create(Program.Handler);
 
@@ -34,7 +37,7 @@ internal class Program {
         return rootCommand.Invoke(args);
     }
 
-    private static int Handler(FileInfo old, FileInfo @new, bool exports) {
+    private static int Handler(FileInfo old, FileInfo @new, bool exports, bool imports) {
 
         PortableExecutable oldPe;
         try { oldPe = new PortableExecutable(old.FullName); }
@@ -52,6 +55,9 @@ internal class Program {
 
         if (exports)
             Program.DiffExports(oldPe.ExportDirectory, newPe.ExportDirectory);
+
+        if (imports)
+            Program.DiffImports(oldPe.ImportDirectory, newPe.ImportDirectory);
 
         return 0;
     }
@@ -78,6 +84,56 @@ internal class Program {
                 };
 
                 Console.WriteLine("   {0,-4}{1,-7:X4}{2}", symbol, name.Ordinal, name.Name);
+
+            }
+
+        }
+
+        Console.WriteLine();
+
+    }
+
+    private static void DiffImports(ImportDirectory? old, ImportDirectory? @new) {
+
+        Console.WriteLine("\tImports diff\n");
+
+        ImportsDiff diff = ImportDirectory.Diff(old, @new);
+        if (!diff.HasChanges) Console.WriteLine("   No changes.");
+        else {
+
+            Dictionary<string, DiffStatus> libraries = diff.GetLibraries();
+            foreach ((string library, DiffStatus status) in libraries) {
+
+                if (status == DiffStatus.Unchanged) continue;
+
+                char symbol = status switch {
+                    DiffStatus.Added => '+',
+                    DiffStatus.Removed => '-',
+                    DiffStatus.Modified => '*',
+                    _ => ' ',
+                };
+
+                Console.WriteLine("   {0,-4}{1}", symbol, library);
+                Console.WriteLine("\n      S   Ord.   Name\n");
+
+                IEnumerable<ExportName> imports = diff.Changes.Keys.Where(x => (x.Library == library)).Select(x => x.Name);
+                foreach (ExportName import in imports) {
+
+                    DiffStatus s = diff.Changes[(library, import)];
+                    if (s == DiffStatus.Unchanged) continue;
+
+                    symbol = s switch {
+                        DiffStatus.Added => '+',
+                        DiffStatus.Removed => '-',
+                        _ => ' ',
+                    };
+
+                    Console.WriteLine("      {0,-4}{1,-7:X4}{2}", symbol, import.Ordinal, import.Name);
+
+                }
+
+                if (libraries.Last().Key != library)
+                    Console.WriteLine();
 
             }
 
