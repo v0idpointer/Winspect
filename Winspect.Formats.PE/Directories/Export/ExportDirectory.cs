@@ -8,6 +8,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Winspect.Common;
 using Winspect.Formats.PE.Headers;
 
 namespace Winspect.Formats.PE.Directories.Export;
@@ -15,7 +16,7 @@ namespace Winspect.Formats.PE.Directories.Export;
 /// <summary>
 /// Represents the IMAGE_EXPORT_DIRECTORY structure.
 /// </summary>
-public class ExportDirectory : IDirectory<ExportDirectory> {
+public class ExportDirectory : IDirectory<ExportDirectory>, IDiffable<ExportDirectory, ExportsDiff> {
 
     public uint Characteristics { get; private set; }
     public uint TimeDateStamp { get; private set; }
@@ -126,6 +127,10 @@ public class ExportDirectory : IDirectory<ExportDirectory> {
         }
 
         return exportDirectory;
+    }
+
+    public static ExportsDiff Diff(ExportDirectory? a, ExportDirectory? b) {
+        return new ExportsDiff(a, b);
     }
 
 }

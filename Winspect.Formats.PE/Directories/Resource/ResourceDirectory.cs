@@ -7,6 +7,7 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
+using Winspect.Common;
 using Winspect.Formats.PE.Headers;
 
 namespace Winspect.Formats.PE.Directories.Resource;
@@ -14,7 +15,7 @@ namespace Winspect.Formats.PE.Directories.Resource;
 /// <summary>
 /// Represents the IMAGE_RESOURCE_DIRECTORY structure.
 /// </summary>
-public class ResourceDirectory : IDirectory<ResourceDirectory> {
+public class ResourceDirectory : IDirectory<ResourceDirectory>, IDiffable<ResourceDirectory, ResourcesDiff> {
 
     public static readonly uint ResourceNameIsString = 0x80000000;
     public static readonly uint ResourceDataIsDirectory = 0x80000000;
@@ -91,6 +92,10 @@ public class ResourceDirectory : IDirectory<ResourceDirectory> {
             throw new InvalidOperationException("The resource directory does not exist in the PE image.");
 
         return ResourceDirectory.LoadDirectory(null, pe, stream, directory.VirtualAddress, 0);
+    }
+
+    public static ResourcesDiff Diff(ResourceDirectory? a, ResourceDirectory? b) {
+        return new ResourcesDiff(a, b);
     }
 
 }
