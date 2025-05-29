@@ -64,10 +64,9 @@ internal class Program {
         if (resources)
             Program.DiffResources(oldPe.ResourceDirectory, newPe.ResourceDirectory);
 
-        if (!exports && !imports && !resources) {
-            Console.WriteLine("No options provided. A diff summary should be shown here.");
-            // TODO: implement.
-        }
+        // summary if no options are provided:
+        if (!exports && !imports && !resources)
+            Program.ShowSummary(oldPe, newPe);
 
         return 0;
     }
@@ -278,6 +277,33 @@ internal class Program {
             }
 
         }
+
+        Console.WriteLine();
+
+    }
+
+    private static void ShowSummary(PortableExecutable old, PortableExecutable @new) {
+
+        Console.WriteLine("\tSummary\n");
+
+        ExportsDiff exportsDiff = ExportDirectory.Diff(old.ExportDirectory, @new.ExportDirectory);
+        ImportsDiff importsDiff = ImportDirectory.Diff(old.ImportDirectory, @new.ImportDirectory);
+        ResourcesDiff resourcesDiff = ResourceDirectory.Diff(old.ResourceDirectory, @new.ResourceDirectory);
+
+        Console.WriteLine(
+            "   Exports: {0} change(s).", 
+            exportsDiff.Changes.Values.Where(x => (x != DiffStatus.Unchanged)).Count()
+        );
+
+        Console.WriteLine(
+            "   Imports: {0} change(s).",
+            importsDiff.Changes.Values.Where(x => (x != DiffStatus.Unchanged)).Count()
+        );
+
+        Console.WriteLine(
+            "   Resources: {0} change(s).",
+            resourcesDiff.Changes.Values.Where(x => (x != DiffStatus.Unchanged)).Count()
+        );
 
         Console.WriteLine();
 
