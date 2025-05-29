@@ -86,4 +86,14 @@ public class ImportsDiff {
         return libraries;
     }
 
+    public Dictionary<ExportName, DiffStatus> GetImports(string library) {
+    
+        Dictionary<ExportName, DiffStatus> imports = new Dictionary<ExportName, DiffStatus>();
+
+        foreach (ExportName import in this.Changes.Keys.Where(x => (x.Library == library)).Select(x => x.Name))
+            imports.Add(import, this.Changes[(library, import)]);
+
+        return imports;
+    }
+
 }

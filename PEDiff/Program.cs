@@ -125,10 +125,8 @@ internal class Program {
                 Console.WriteLine("   {0,-4}{1}", symbol, library);
                 Console.WriteLine("\n      S   Ord.   Name\n");
 
-                IEnumerable<ExportName> imports = diff.Changes.Keys.Where(x => (x.Library == library)).Select(x => x.Name);
-                foreach (ExportName import in imports) {
+                foreach ((ExportName import, DiffStatus s) in diff.GetImports(library)) {
 
-                    DiffStatus s = diff.Changes[(library, import)];
                     if (s == DiffStatus.Unchanged) continue;
 
                     symbol = s switch {
