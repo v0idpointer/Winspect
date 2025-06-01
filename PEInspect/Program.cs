@@ -69,6 +69,9 @@ internal class Program {
             Program.InspectResourceDirectoryTree(pe);
         }
 
+        if (!headers && !exports && !imports && !resources)
+            Console.WriteLine("No options provided.");
+
         return 0;
     }
 
