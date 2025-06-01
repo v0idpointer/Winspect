@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <AssemblyTitle>Winspect Common Library</AssemblyTitle>
+    <Product>Winspect.Common</Product>
+    <Version>1.0.0.0</Version>
+    <Company>V0idPointer</Company>
+    <Copyright>Copyright (c) 2025 V0idPointer</Copyright>
+  </PropertyGroup>
+
 </Project>
