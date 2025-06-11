@@ -579,7 +579,7 @@ internal class Program {
             ResourceId type = types[i];
             string str = Program.s_resourceTypes.GetValueOrDefault(
                 type, 
-                (type.NumericalId.HasValue ? string.Format("{0:X4}", type.NumericalId.Value) : type.ToString())
+                (type.NumericalId.HasValue ? string.Format("{0:X4}", type.NumericalId.Value) : string.Format("\"{0}\"", type))
             );
 
             Console.WriteLine("{0}", str);
@@ -597,7 +597,7 @@ internal class Program {
                 else Console.Write("   │   ├── ");
 
                 ResourceId id = ids[j];
-                str = (id.NumericalId.HasValue ? string.Format("{0:X4}", id.NumericalId.Value) : id.ToString());
+                str = (id.NumericalId.HasValue ? string.Format("{0:X4}", id.NumericalId.Value) : string.Format("\"{0}\"", id));
                 Console.WriteLine("{0}", str);
 
                 ushort[]? languages = pe.GetResourceLanguages(ids[j], types[i]);
