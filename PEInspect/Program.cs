@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Winspect.Formats.PE;
+using Winspect.Formats.PE.Directories.DelayImport;
 using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Directories.Import;
 using Winspect.Formats.PE.Directories.Resource;
@@ -63,6 +64,9 @@ internal class Program {
 
         if (imports && (pe.ImportDirectory != null))
             Program.Inspect(pe.ImportDirectory);
+
+        if (imports && (pe.DelayImportDirectory != null))
+            Program.Inspect(pe.DelayImportDirectory);
 
         if (resources && (pe.ResourceDirectory != null)) {
             Program.Inspect(pe.ResourceDirectory);
@@ -622,6 +626,42 @@ internal class Program {
                 }
 
             }
+
+        }
+
+    }
+
+    private static void Inspect(DelayImportDirectory delayImportDirectory) {
+
+        Console.WriteLine("\tDelay load import directory\n");
+
+        if (delayImportDirectory.Imports == null) return;
+
+        foreach ((string _, DelayImportedLibrary import) in delayImportDirectory.Imports) {
+
+            Console.WriteLine("   {0,-29}{1:X8}", "Attributes", import.AllAttributes);
+            Console.WriteLine("   {0,-29}{1,-11:X8}{2}", "DLL name", import.DllName.RVA, import.DllName.Name);
+            Console.WriteLine("   {0,-29}{1:X8}", "Module handle", import.ModuleHandleRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Import address table", import.ImportAddressTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Import name table", import.ImportNameTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Bound import address table", import.BoundImportAddressTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Unload information table", import.UnloadInformationTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Time date stamp", import.TimeDateStamp);
+            Console.WriteLine();
+
+            if (import.Imports == null) continue;
+
+            Console.WriteLine("      Ord.   Hint   Name\n");
+
+            foreach (ImportedFunction fn in import.Imports) {
+
+                Console.Write("      {0,-7:X4}", fn.Ordinal.HasValue ? fn.Ordinal.Value : string.Empty);
+                Console.Write("{0,-7:X4}", fn.Hint.HasValue ? fn.Hint.Value : string.Empty);
+                Console.WriteLine(fn.Name ?? string.Empty);
+
+            }
+
+            Console.WriteLine();
 
         }
 

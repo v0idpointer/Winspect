@@ -84,7 +84,7 @@ public class ImportedLibrary {
         return importDescriptor;
     }
 
-    private static ushort? GetOrdinalOrName(ReadOnlySpan<byte> data, PortableExecutable pe, Stream stream, out string? name, out ushort? hint) {
+    internal static ushort? GetOrdinalOrName(ReadOnlySpan<byte> data, PortableExecutable pe, Stream stream, out string? name, out ushort? hint) {
 
         ulong entry;
         if (data.Length == 8) entry = BinaryPrimitives.ReadUInt64LittleEndian(data);
