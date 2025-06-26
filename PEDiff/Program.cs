@@ -232,7 +232,7 @@ internal class Program {
                     else Console.Write("   │   ├── ");
 
                     str = (id.NumericalId.HasValue ? string.Format("{0:X4}", id.NumericalId.Value) : string.Format("\"{0}\"", id));
-                    symbol = typeStatus switch {
+                    symbol = idStatus switch {
                         DiffStatus.Added => '+',
                         DiffStatus.Removed => '-',
                         DiffStatus.Modified => '*',
@@ -261,7 +261,7 @@ internal class Program {
                         else if (idsCount == 0) Console.Write("   |       ├── ");
                         else Console.Write("   │   │   ├── ");
 
-                        symbol = typeStatus switch {
+                        symbol = langStatus switch {
                             DiffStatus.Added => '+',
                             DiffStatus.Removed => '-',
                             DiffStatus.Modified => '*',
