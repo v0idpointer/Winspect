@@ -6,11 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Winspect.Common;
+using Winspect.Formats.PE.Directories.Import;
 using Winspect.Formats.PE.Headers;
 
 namespace Winspect.Formats.PE.Directories.DelayImport;
 
-public class DelayImportDirectory : IDirectory<DelayImportDirectory> {
+public class DelayImportDirectory : IDirectory<DelayImportDirectory>, IDiffable<DelayImportDirectory, ImportsDiff> {
 
     public Dictionary<string, DelayImportedLibrary>? Imports { get; private set; }
 
@@ -40,6 +42,10 @@ public class DelayImportDirectory : IDirectory<DelayImportDirectory> {
         }
 
         return delayImportDirectory;
+    }
+
+    public static ImportsDiff Diff(DelayImportDirectory? a, DelayImportDirectory? b) {
+        return new ImportsDiff(a, b);
     }
 
 }
