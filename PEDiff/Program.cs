@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using Winspect.Common;
 using Winspect.Formats.PE;
+using Winspect.Formats.PE.Directories.DelayImport;
 using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Directories.Import;
 using Winspect.Formats.PE.Directories.Resource;
@@ -59,7 +60,7 @@ internal class Program {
             Program.DiffExports(oldPe.ExportDirectory, newPe.ExportDirectory);
 
         if (imports)
-            Program.DiffImports(oldPe.ImportDirectory, newPe.ImportDirectory);
+            Program.DiffImports((oldPe.ImportDirectory, oldPe.DelayImportDirectory), (newPe.ImportDirectory, newPe.DelayImportDirectory));
 
         if (resources)
             Program.DiffResources(oldPe.ResourceDirectory, newPe.ResourceDirectory);
@@ -102,11 +103,11 @@ internal class Program {
 
     }
 
-    private static void DiffImports(ImportDirectory? old, ImportDirectory? @new) {
+    private static void DiffImports((ImportDirectory?, DelayImportDirectory?) old, (ImportDirectory?, DelayImportDirectory?) @new) {
 
         Console.WriteLine("\tImports diff\n");
 
-        ImportsDiff diff = ImportDirectory.Diff(old, @new);
+        ImportsDiff diff = ImportsDiff.Diff(old, @new);
         if (!diff.HasChanges) Console.WriteLine("   No changes.");
         else {
 
@@ -132,6 +133,7 @@ internal class Program {
                     symbol = s switch {
                         DiffStatus.Added => '+',
                         DiffStatus.Removed => '-',
+                        DiffStatus.Modified => '*',
                         _ => ' ',
                     };
 
@@ -230,7 +232,7 @@ internal class Program {
                     else Console.Write("   │   ├── ");
 
                     str = (id.NumericalId.HasValue ? string.Format("{0:X4}", id.NumericalId.Value) : string.Format("\"{0}\"", id));
-                    symbol = typeStatus switch {
+                    symbol = idStatus switch {
                         DiffStatus.Added => '+',
                         DiffStatus.Removed => '-',
                         DiffStatus.Modified => '*',
@@ -259,7 +261,7 @@ internal class Program {
                         else if (idsCount == 0) Console.Write("   |       ├── ");
                         else Console.Write("   │   │   ├── ");
 
-                        symbol = typeStatus switch {
+                        symbol = langStatus switch {
                             DiffStatus.Added => '+',
                             DiffStatus.Removed => '-',
                             DiffStatus.Modified => '*',
@@ -285,7 +287,7 @@ internal class Program {
         Console.WriteLine("\tSummary\n");
 
         ExportsDiff exportsDiff = ExportDirectory.Diff(old.ExportDirectory, @new.ExportDirectory);
-        ImportsDiff importsDiff = ImportDirectory.Diff(old.ImportDirectory, @new.ImportDirectory);
+        ImportsDiff importsDiff = ImportsDiff.Diff((old.ImportDirectory, old.DelayImportDirectory), (@new.ImportDirectory, @new.DelayImportDirectory));
         ResourcesDiff resourcesDiff = ResourceDirectory.Diff(old.ResourceDirectory, @new.ResourceDirectory);
 
         Console.WriteLine(
