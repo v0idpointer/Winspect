@@ -1,0 +1,57 @@
+﻿/*
+    Windows Inspection Utilities
+    Copyright (c) 2025 V0idPointer
+*/
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+namespace Winspect.Windows.Registry.Formats.Regf;
+
+public class PrimaryFile {
+
+    public Stream? Stream { get; private set; }
+
+    public BaseBlock BaseBlock { get; private set; }
+    public HiveBin[] HiveBins { get; private set; }
+
+    public PrimaryFile(Stream stream, bool takeOwnership) {
+
+        stream.Position = 0;
+
+        Span<byte> data = new byte[4096].AsSpan();
+        stream.ReadExactly(data);
+        this.BaseBlock = new BaseBlock(data);
+
+        if (this.BaseBlock.Signature != BaseBlock.RegfSignature)
+            throw new ArgumentException("Bad REGF file.");
+
+        List<HiveBin> hiveBins = new List<HiveBin>();
+        uint bytesLeft = this.BaseBlock.HiveBinsDataSize;
+
+        while (bytesLeft > 0) {
+
+            uint read;
+            HiveBin hiveBin;
+
+            try { hiveBin = HiveBin.LoadHiveBin(stream, out read); }
+            catch (Exception) {
+                throw new ArgumentException("Bad REGF file.");
+            }
+
+            hiveBins.Add(hiveBin);
+            bytesLeft -= read;
+
+        }
+
+        this.HiveBins = hiveBins.ToArray();
+
+        if (takeOwnership) this.Stream = stream;
+
+    }
+
+    public PrimaryFile(string filepath)
+        : this(new FileStream(filepath, FileMode.Open, FileAccess.Read), takeOwnership: true) { }
+
+}
