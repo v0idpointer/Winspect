@@ -54,4 +54,14 @@ public class PrimaryFile {
     public PrimaryFile(string filepath)
         : this(new FileStream(filepath, FileMode.Open, FileAccess.Read), takeOwnership: true) { }
 
+    public Cell? FindCell(uint offset) {
+
+        foreach (HiveBin hiveBin in this.HiveBins)
+            if ((offset >= (hiveBin.Header.Offset)) && (offset < (hiveBin.Header.Offset + hiveBin.Header.Size)))
+                if (hiveBin.Cells.ContainsKey((4096 + offset)))
+                    return hiveBin.Cells[(4096 + offset)];
+
+        return null;
+    }
+
 }
