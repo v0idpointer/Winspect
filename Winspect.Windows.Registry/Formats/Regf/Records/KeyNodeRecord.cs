@@ -36,7 +36,7 @@ public class KeyNodeRecord : Record {
     public uint WorkVar { get; private set; }
     public ushort KeyNameLength { get; private set; }
     public ushort ClassNameLength { get; private set; }
-    public string KeyNameString { get; private set; }
+    public string KeyName { get; private set; }
 
     public override RecordType Type => RecordType.KeyNode;
 
@@ -70,8 +70,8 @@ public class KeyNodeRecord : Record {
             throw new ArgumentException("The specified buffer does not contain an nk record (buffer too small).", nameof(data));
 
         ReadOnlySpan<byte> keyName = data[76..(76 + this.KeyNameLength)];
-        if ((this.Flags & 0x20) == 0x20) this.KeyNameString = Encoding.ASCII.GetString(keyName);
-        else this.KeyNameString = Encoding.Unicode.GetString(keyName);
+        if ((this.Flags & 0x20) == 0x20) this.KeyName = Encoding.ASCII.GetString(keyName);
+        else this.KeyName = Encoding.Unicode.GetString(keyName);
 
     }
 

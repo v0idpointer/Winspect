@@ -25,7 +25,7 @@ public class PrimaryFile {
         this.BaseBlock = new BaseBlock(data);
 
         if (this.BaseBlock.Signature != BaseBlock.RegfSignature)
-            throw new ArgumentException("Bad REGF file.");
+            throw new BadRegfFileException("Bad REGF file.");
 
         List<HiveBin> hiveBins = new List<HiveBin>();
         uint bytesLeft = this.BaseBlock.HiveBinsDataSize;
@@ -36,8 +36,8 @@ public class PrimaryFile {
             HiveBin hiveBin;
 
             try { hiveBin = HiveBin.LoadHiveBin(stream, out read); }
-            catch (Exception) {
-                throw new ArgumentException("Bad REGF file.");
+            catch (Exception ex) {
+                throw new BadRegfFileException("Bad REGF file: bad hive bin.", ex);
             }
 
             hiveBins.Add(hiveBin);
@@ -55,6 +55,9 @@ public class PrimaryFile {
         : this(new FileStream(filepath, FileMode.Open, FileAccess.Read), takeOwnership: true) { }
 
     public Cell? FindCell(uint offset) {
+
+        if (offset == 0xFFFFFFFF)
+            return null;
 
         foreach (HiveBin hiveBin in this.HiveBins)
             if ((offset >= (hiveBin.Header.Offset)) && (offset < (hiveBin.Header.Offset + hiveBin.Header.Size)))
