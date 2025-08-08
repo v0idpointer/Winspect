@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Winspect.Formats.PE;
+using Winspect.Formats.PE.Directories.Debug;
 using Winspect.Formats.PE.Directories.DelayImport;
 using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Directories.Import;
@@ -34,6 +35,7 @@ internal class Program {
         rootCommand.AddOption(new Option<bool>("--exports", "Inspect the PE exports"));
         rootCommand.AddOption(new Option<bool>("--imports", "Inspect the PE imports"));
         rootCommand.AddOption(new Option<bool>("--resources", "Inspect the embedded resources"));
+        rootCommand.AddOption(new Option<bool>("--debug", "Inspects the debug directory"));
         rootCommand.AddOption(new Option<bool>("--nologo", "Suppress the startup logo"));
         rootCommand.Handler = CommandHandler.Create(Program.Handler);
 
@@ -41,7 +43,7 @@ internal class Program {
         return rootCommand.Invoke(args);
     }
 
-    private static int Handler(FileInfo file, bool headers, bool exports, bool imports, bool resources) {
+    private static int Handler(FileInfo file, bool headers, bool exports, bool imports, bool resources, bool debug) {
 
         PortableExecutable pe;
 
@@ -73,7 +75,10 @@ internal class Program {
             Program.InspectResourceDirectoryTree(pe);
         }
 
-        if (!headers && !exports && !imports && !resources)
+        if (debug && (pe.DebugDirectory != null))
+            Program.Inspect(pe.DebugDirectory);
+
+        if (!headers && !exports && !imports && !resources && !debug)
             Console.WriteLine("No options provided.");
 
         return 0;
@@ -628,6 +633,30 @@ internal class Program {
             }
 
         }
+
+    }
+
+    private static void Inspect(DebugDirectory debug) {
+
+        Console.WriteLine("\tDebug directory\n");
+
+        if (debug.Entries == null) return;
+
+        foreach (DebugDirectoryEntry entry in debug.Entries) {
+
+            Console.WriteLine("   {0,-22}{1:X8}", "Characteristics", entry.Characteristics);
+            Console.WriteLine("   {0,-22}{1:X8}", "Time date stamp", entry.TimeDateStamp);
+            Console.WriteLine("   {0,-26}{1:X4}", "Major version", entry.MajorVersion);
+            Console.WriteLine("   {0,-26}{1:X4}", "Minor version", entry.MinorVersion);
+            Console.WriteLine("   {0,-22}{1:X8}", "Type", (int)(entry.Type));
+            Console.WriteLine("   {0,-22}{1:X8}", "Size of data", entry.SizeOfData);
+            Console.WriteLine("   {0,-22}{1:X8}", "Address of raw data", entry.AddressOfRawData);
+            Console.WriteLine("   {0,-22}{1:X8}", "Pointer to raw data", entry.PointerToRawData);
+            Console.WriteLine();
+
+        }
+
+        Console.WriteLine();
 
     }
 

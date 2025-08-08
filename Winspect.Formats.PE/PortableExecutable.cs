@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text;
 using Winspect.Formats.PE.Directories;
+using Winspect.Formats.PE.Directories.Debug;
 using Winspect.Formats.PE.Directories.DelayImport;
 using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Directories.Import;
@@ -36,6 +37,7 @@ public class PortableExecutable {
     public ExportDirectory? ExportDirectory { get; private set; }
     public ImportDirectory? ImportDirectory { get; private set; }
     public ResourceDirectory? ResourceDirectory { get; private set; }
+    public DebugDirectory? DebugDirectory { get; private set; }
     public DelayImportDirectory? DelayImportDirectory { get; private set; }
 
     public PortableExecutable(Stream stream, bool takeOwnership) {
@@ -72,6 +74,7 @@ public class PortableExecutable {
         this.ExportDirectory = this.LoadDataDirectory<ExportDirectory>(stream);
         this.ImportDirectory = this.LoadDataDirectory<ImportDirectory>(stream);
         this.ResourceDirectory = this.LoadDataDirectory<ResourceDirectory>(stream);
+        this.DebugDirectory = this.LoadDataDirectory<DebugDirectory>(stream);
         this.DelayImportDirectory = this.LoadDataDirectory<DelayImportDirectory>(stream);
 
         if (takeOwnership) this.Stream = stream;
