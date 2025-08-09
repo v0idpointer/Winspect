@@ -5,6 +5,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.IO;
 
 namespace Winspect.Formats.PE.Directories.Debug;
 
@@ -19,6 +20,8 @@ public class DebugDirectoryEntry {
     public uint AddressOfRawData { get; private set; }
     public uint PointerToRawData { get; private set; }
 
+    public DebugInfo? DebugInformation { get; private set; }
+
     public DebugDirectoryEntry(ReadOnlySpan<byte> data) {
 
         if (data.Length < 28)
@@ -32,6 +35,32 @@ public class DebugDirectoryEntry {
         this.SizeOfData = BinaryPrimitives.ReadUInt32LittleEndian(data[16..20]);
         this.AddressOfRawData = BinaryPrimitives.ReadUInt32LittleEndian(data[20..24]);
         this.PointerToRawData = BinaryPrimitives.ReadUInt32LittleEndian(data[24..28]);
+
+    }
+
+    public static DebugDirectoryEntry LoadDebugDirectoryEntry(ReadOnlySpan<byte> data, Stream? stream) {
+
+        DebugDirectoryEntry entry = new DebugDirectoryEntry(data);
+        if (stream != null) {
+            DebugDirectoryEntry.LoadDebugInformation(entry, stream);
+        }
+
+        return entry;
+    }
+
+    private static void LoadDebugInformation(DebugDirectoryEntry entry, Stream stream) {
+
+        if (entry.Type != DebugType.CodeView) return;
+
+        Span<byte> data = new byte[entry.SizeOfData].AsSpan();
+        stream.Position = entry.PointerToRawData;
+        stream.ReadExactly(data);
+
+        CodeViewInfo cv = new CodeViewInfo(data);
+        if (cv.Signature != CodeViewInfo.RsdsSignature)
+            throw new BadPortableExecutableException("Bad RSDS debug information entry.");
+
+        entry.DebugInformation = cv;
 
     }
 

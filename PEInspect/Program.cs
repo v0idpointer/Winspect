@@ -634,7 +634,15 @@ internal class Program {
 
         }
 
+        Console.WriteLine();
+
     }
+
+    private static Dictionary<DebugType, string> s_debugTypes = new Dictionary<DebugType, string>() {
+
+        { DebugType.CodeView, "CodeView" },
+    
+    };
 
     private static void Inspect(DebugDirectory debug) {
 
@@ -648,15 +656,34 @@ internal class Program {
             Console.WriteLine("   {0,-22}{1:X8}", "Time date stamp", entry.TimeDateStamp);
             Console.WriteLine("   {0,-26}{1:X4}", "Major version", entry.MajorVersion);
             Console.WriteLine("   {0,-26}{1:X4}", "Minor version", entry.MinorVersion);
-            Console.WriteLine("   {0,-22}{1:X8}", "Type", (int)(entry.Type));
+            
+            Console.Write("   {0,-22}{1,-11:X8}", "Type", (int)(entry.Type));
+            Console.WriteLine("{0}", Program.s_debugTypes.GetValueOrDefault(entry.Type, string.Empty));
+
             Console.WriteLine("   {0,-22}{1:X8}", "Size of data", entry.SizeOfData);
             Console.WriteLine("   {0,-22}{1:X8}", "Address of raw data", entry.AddressOfRawData);
             Console.WriteLine("   {0,-22}{1:X8}", "Pointer to raw data", entry.PointerToRawData);
             Console.WriteLine();
 
+            if (entry.DebugInformation != null) {
+                Program.InspectDebugInfo(entry.DebugInformation);
+            }
+
         }
 
-        Console.WriteLine();
+    }
+
+    private static void InspectDebugInfo(DebugInfo info) {
+
+        if (info is CodeViewInfo cv) {
+
+            Console.WriteLine("      {0,-15}{1}", "Signature", cv.Signature);
+            Console.WriteLine("      {0,-15}{1}", "GUID", cv.Guid.ToString().ToUpper());
+            Console.WriteLine("      {0,-15}{1:X8}", "Age", cv.Age);
+            Console.WriteLine("      {0,-15}{1}", "PDB filename", cv.PdbFilename);
+            Console.WriteLine();
+
+        }
 
     }
 

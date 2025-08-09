@@ -32,7 +32,7 @@ public class DebugDirectory : IDirectory<DebugDirectory> {
             stream.Position = SectionHeader.RVAToFileOffset(pe.SectionHeaders, (uint)(directory.VirtualAddress + (i * 28)));
             stream.ReadExactly(data);
 
-            debugDirectory.Entries[i] = new DebugDirectoryEntry(data);
+            debugDirectory.Entries[i] = DebugDirectoryEntry.LoadDebugDirectoryEntry(data, stream);
 
         }
 
