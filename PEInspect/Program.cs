@@ -35,7 +35,7 @@ internal class Program {
         rootCommand.AddOption(new Option<bool>("--exports", "Inspect the PE exports"));
         rootCommand.AddOption(new Option<bool>("--imports", "Inspect the PE imports"));
         rootCommand.AddOption(new Option<bool>("--resources", "Inspect the embedded resources"));
-        rootCommand.AddOption(new Option<bool>("--debug", "Inspects the debug directory"));
+        rootCommand.AddOption(new Option<bool>("--debug", "Inspect the debug directory"));
         rootCommand.AddOption(new Option<bool>("--nologo", "Suppress the startup logo"));
         rootCommand.Handler = CommandHandler.Create(Program.Handler);
 

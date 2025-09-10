@@ -20,7 +20,7 @@
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <AssemblyTitle>Portable Executable (PE) Inspection Utility</AssemblyTitle>
     <Product>PEInspect</Product>
-    <Version>1.0.0.0</Version>
+    <Version>1.1.0.0</Version>
     <Company>V0idPointer</Company>
     <Copyright>Copyright (c) 2025 V0idPointer</Copyright>
   </PropertyGroup>
