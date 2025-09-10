@@ -11,6 +11,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Winspect.Formats.PE;
+using Winspect.Formats.PE.Directories.Debug;
+using Winspect.Formats.PE.Directories.DelayImport;
 using Winspect.Formats.PE.Directories.Export;
 using Winspect.Formats.PE.Directories.Import;
 using Winspect.Formats.PE.Directories.Resource;
@@ -30,9 +32,10 @@ internal class Program {
         rootCommand.Description = "Inspects the structure and contents of a Portable Executable (PE) file."; 
         rootCommand.AddArgument(new Argument<FileInfo>("file", "The PE file to inspect"));
         rootCommand.AddOption(new Option<bool>("--headers", "Inspect the PE headers"));
-        rootCommand.AddOption(new Option<bool>("--exports", "Inspect the export directory"));
-        rootCommand.AddOption(new Option<bool>("--imports", "Inspect the import directory"));
-        rootCommand.AddOption(new Option<bool>("--resources", "Inspect the resource directory"));
+        rootCommand.AddOption(new Option<bool>("--exports", "Inspect the PE exports"));
+        rootCommand.AddOption(new Option<bool>("--imports", "Inspect the PE imports"));
+        rootCommand.AddOption(new Option<bool>("--resources", "Inspect the embedded resources"));
+        rootCommand.AddOption(new Option<bool>("--debug", "Inspect the debug directory"));
         rootCommand.AddOption(new Option<bool>("--nologo", "Suppress the startup logo"));
         rootCommand.Handler = CommandHandler.Create(Program.Handler);
 
@@ -40,7 +43,7 @@ internal class Program {
         return rootCommand.Invoke(args);
     }
 
-    private static int Handler(FileInfo file, bool headers, bool exports, bool imports, bool resources) {
+    private static int Handler(FileInfo file, bool headers, bool exports, bool imports, bool resources, bool debug) {
 
         PortableExecutable pe;
 
@@ -64,12 +67,18 @@ internal class Program {
         if (imports && (pe.ImportDirectory != null))
             Program.Inspect(pe.ImportDirectory);
 
+        if (imports && (pe.DelayImportDirectory != null))
+            Program.Inspect(pe.DelayImportDirectory);
+
         if (resources && (pe.ResourceDirectory != null)) {
             Program.Inspect(pe.ResourceDirectory);
             Program.InspectResourceDirectoryTree(pe);
         }
 
-        if (!headers && !exports && !imports && !resources)
+        if (debug && (pe.DebugDirectory != null))
+            Program.Inspect(pe.DebugDirectory);
+
+        if (!headers && !exports && !imports && !resources && !debug)
             Console.WriteLine("No options provided.");
 
         return 0;
@@ -84,23 +93,23 @@ internal class Program {
             (char)((dosHeader.Magic >> 8) & 0xFF),
         ]);
 
-        Console.WriteLine("{0,-17}{1,-7:X4}{2}", "e_magic", dosHeader.Magic, magic);
-        Console.WriteLine("{0,-17}{1:X4}", "e_cblp", dosHeader.Cblp);
-        Console.WriteLine("{0,-17}{1:X4}", "e_cp", dosHeader.Cp);
-        Console.WriteLine("{0,-17}{1:X4}", "e_crlc", dosHeader.Crlc);
-        Console.WriteLine("{0,-17}{1:X4}", "e_cparhdr", dosHeader.Cparhdr);
-        Console.WriteLine("{0,-17}{1:X4}", "e_minalloc", dosHeader.Minalloc);
-        Console.WriteLine("{0,-17}{1:X4}", "e_maxalloc", dosHeader.Maxalloc);
-        Console.WriteLine("{0,-17}{1:X4}", "e_ss", dosHeader.Ss);
-        Console.WriteLine("{0,-17}{1:X4}", "e_sp", dosHeader.Sp);
-        Console.WriteLine("{0,-17}{1:X4}", "e_csum", dosHeader.Csum);
-        Console.WriteLine("{0,-17}{1:X4}", "e_ip", dosHeader.Ip);
-        Console.WriteLine("{0,-17}{1:X4}", "e_cs", dosHeader.Cs);
-        Console.WriteLine("{0,-17}{1:X4}", "e_lfarlc", dosHeader.Lfarlc);
-        Console.WriteLine("{0,-17}{1:X4}", "e_ovno", dosHeader.Ovno);
-        Console.WriteLine("{0,-17}{1:X4}", "e_oemid", dosHeader.Oemid);
-        Console.WriteLine("{0,-17}{1:X4}", "e_oeminfo", dosHeader.Oeminfo);
-        Console.WriteLine("{0,-13}{1:X8}", "e_lfanew", dosHeader.Lfanew);
+        Console.WriteLine("{0,-39}{1,-7:X4}{2}", "Magic", dosHeader.Magic, magic);
+        Console.WriteLine("{0,-39}{1:X4}", "Bytes on last page of file", dosHeader.Cblp);
+        Console.WriteLine("{0,-39}{1:X4}", "Pages in file", dosHeader.Cp);
+        Console.WriteLine("{0,-39}{1:X4}", "Relocations", dosHeader.Crlc);
+        Console.WriteLine("{0,-39}{1:X4}", "Size of header in paragraphs", dosHeader.Cparhdr);
+        Console.WriteLine("{0,-39}{1:X4}", "Minimum extra paragraphs needed", dosHeader.Minalloc);
+        Console.WriteLine("{0,-39}{1:X4}", "Maximum extra paragraphs needed", dosHeader.Maxalloc);
+        Console.WriteLine("{0,-39}{1:X4}", "Initial (relative) SS value", dosHeader.Ss);
+        Console.WriteLine("{0,-39}{1:X4}", "Initial SP value", dosHeader.Sp);
+        Console.WriteLine("{0,-39}{1:X4}", "Checksum", dosHeader.Csum);
+        Console.WriteLine("{0,-39}{1:X4}", "Initial IP value", dosHeader.Ip);
+        Console.WriteLine("{0,-39}{1:X4}", "Initial (relative) CS value", dosHeader.Cs);
+        Console.WriteLine("{0,-39}{1:X4}", "File address of relocation table", dosHeader.Lfarlc);
+        Console.WriteLine("{0,-39}{1:X4}", "Overlay number", dosHeader.Ovno);
+        Console.WriteLine("{0,-39}{1:X4}", "OEM identifier", dosHeader.Oemid);
+        Console.WriteLine("{0,-39}{1:X4}", "OEM information", dosHeader.Oeminfo);
+        Console.WriteLine("{0,-35}{1:X8}", "File address of new EXE header", dosHeader.Lfanew);
         Console.WriteLine();
 
     }
@@ -179,20 +188,20 @@ internal class Program {
 
         Console.WriteLine("\tFile header\n");
 
-        Console.Write("{0,-27}{1,-7:X4}", "Machine", (ushort)(fileHeader.Machine));
+        Console.Write("{0,-30}{1,-7:X4}", "Machine", (ushort)(fileHeader.Machine));
         Console.WriteLine("{0}", Program.s_machines.GetValueOrDefault(fileHeader.Machine, string.Empty));
 
-        Console.WriteLine("{0,-27}{1:X4}", "NumberOfSections", fileHeader.NumberOfSections);
-        Console.WriteLine("{0,-23}{1:X8}", "TimeDateStamp", fileHeader.TimeDateStamp);
-        Console.WriteLine("{0,-23}{1:X8}", "PointerToSymbolTable", fileHeader.PointerToSymbolTable);
-        Console.WriteLine("{0,-23}{1:X8}", "NumberOfSymbols", fileHeader.NumberOfSymbols);
-        Console.WriteLine("{0,-27}{1:X4}", "SizeOfOptionalHeader", fileHeader.SizeOfOptionalHeader);
+        Console.WriteLine("{0,-30}{1:X4}", "Number of sections", fileHeader.NumberOfSections);
+        Console.WriteLine("{0,-26}{1:X8}", "Time date stamp", fileHeader.TimeDateStamp);
+        Console.WriteLine("{0,-26}{1:X8}", "Pointer to symbol table", fileHeader.PointerToSymbolTable);
+        Console.WriteLine("{0,-26}{1:X8}", "Number of symbols", fileHeader.NumberOfSymbols);
+        Console.WriteLine("{0,-30}{1:X4}", "Size of optional header", fileHeader.SizeOfOptionalHeader);
 
         bool firstTime = true;
-        Console.Write("{0,-27}{1,-7:X4}", "Characteristics", (ushort)(fileHeader.Characteristics));
+        Console.Write("{0,-30}{1,-7:X4}", "Characteristics", (ushort)(fileHeader.Characteristics));
         foreach (Characteristics flag in Enum.GetValues<Characteristics>()) { 
             if ((fileHeader.Characteristics & flag) == 0) continue;
-            if (!firstTime) Console.Write("\n{0,-34}", string.Empty);
+            if (!firstTime) Console.Write("\n{0,-37}", string.Empty);
             Console.Write("- {0,-7:X4}{1}", (ushort)(flag), Program.s_characteristics.GetValueOrDefault(flag, string.Empty));
             firstTime = false;
         }
@@ -287,7 +296,7 @@ internal class Program {
 
         Console.WriteLine("\tOptional header\n");
 
-        int defaultPad = 30;
+        int defaultPad = 33;
         int pad = (optionalHeader.Magic == OptionalHeader.Pe32PlusSignature) ? (defaultPad + 8) : defaultPad;
 
         Console.Write("{0}{1,-7:X4}", "Magic".PadRight(pad + 4), optionalHeader.Magic);
@@ -295,44 +304,44 @@ internal class Program {
         else if (optionalHeader.Magic == OptionalHeader.Pe32PlusSignature) Console.WriteLine("PE32+");
         else Console.WriteLine();
 
-        Console.WriteLine("{0}{1:X2}", "MajorLinkerVersion".PadRight(pad + 6), optionalHeader.MajorLinkerVersion);
-        Console.WriteLine("{0}{1:X2}", "MinorLinkerVersion".PadRight(pad + 6), optionalHeader.MinorLinkerVersion);
-        Console.WriteLine("{0}{1:X8}", "SizeOfCode".PadRight(pad), optionalHeader.SizeOfCode);
-        Console.WriteLine("{0}{1:X8}", "SizeOfInitializedData".PadRight(pad), optionalHeader.SizeOfInitializedData);
-        Console.WriteLine("{0}{1:X8}", "SizeOfUninitializedData".PadRight(pad), optionalHeader.SizeOfUninitializedData);
-        Console.WriteLine("{0}{1:X8}", "AddressOfEntryPoint".PadRight(pad), optionalHeader.AddressOfEntryPoint);
-        Console.WriteLine("{0}{1:X8}", "BaseOfCode".PadRight(pad), optionalHeader.BaseOfCode);
-        Console.WriteLine("{0}{1:X8}", "BaseOfData".PadRight(pad), optionalHeader.BaseOfData.HasValue ? optionalHeader.BaseOfData : string.Empty);
+        Console.WriteLine("{0}{1:X2}", "Major linker version".PadRight(pad + 6), optionalHeader.MajorLinkerVersion);
+        Console.WriteLine("{0}{1:X2}", "Minor linker version".PadRight(pad + 6), optionalHeader.MinorLinkerVersion);
+        Console.WriteLine("{0}{1:X8}", "Size of code".PadRight(pad), optionalHeader.SizeOfCode);
+        Console.WriteLine("{0}{1:X8}", "Size of initialized data".PadRight(pad), optionalHeader.SizeOfInitializedData);
+        Console.WriteLine("{0}{1:X8}", "Size of uninitialized data".PadRight(pad), optionalHeader.SizeOfUninitializedData);
+        Console.WriteLine("{0}{1:X8}", "Address of entry point".PadRight(pad), optionalHeader.AddressOfEntryPoint);
+        Console.WriteLine("{0}{1:X8}", "Base of code".PadRight(pad), optionalHeader.BaseOfCode);
+        Console.WriteLine("{0}{1:X8}", "Base of data".PadRight(pad), optionalHeader.BaseOfData.HasValue ? optionalHeader.BaseOfData : string.Empty);
         
-        Console.Write("ImageBase".PadRight(defaultPad));
+        Console.Write("Image base".PadRight(defaultPad));
         if (optionalHeader.Magic == OptionalHeader.Pe32PlusSignature) Console.WriteLine("{0:X16}", optionalHeader.ImageBase);
         else Console.WriteLine("{0:X8}", (uint)(optionalHeader.ImageBase));
 
-        Console.WriteLine("{0}{1:X8}", "SectionAlignment".PadRight(pad), optionalHeader.SectionAlignment);
-        Console.WriteLine("{0}{1:X8}", "FileAlignment".PadRight(pad), optionalHeader.FileAlignment);
+        Console.WriteLine("{0}{1:X8}", "Section alignment".PadRight(pad), optionalHeader.SectionAlignment);
+        Console.WriteLine("{0}{1:X8}", "File alignment".PadRight(pad), optionalHeader.FileAlignment);
         
-        Console.Write("{0}{1,-7:X4}", "MajorOperatingSystemVersion".PadRight(pad + 4), optionalHeader.MajorOperatingSystemVersion);
+        Console.Write("{0}{1,-7:X4}", "Major operating system version".PadRight(pad + 4), optionalHeader.MajorOperatingSystemVersion);
         Console.WriteLine(Program.GetVersion(optionalHeader.MajorOperatingSystemVersion, optionalHeader.MinorOperatingSystemVersion, s_windowsVersions));
-        Console.WriteLine("{0}{1:X4}", "MinorOperatingSystemVersion".PadRight(pad + 4), optionalHeader.MinorOperatingSystemVersion);
+        Console.WriteLine("{0}{1:X4}", "Minor operating system version".PadRight(pad + 4), optionalHeader.MinorOperatingSystemVersion);
         
-        Console.Write("{0}{1,-7:X4}", "MajorImageVersion".PadRight(pad + 4), optionalHeader.MajorImageVersion);
+        Console.Write("{0}{1,-7:X4}", "Major image version".PadRight(pad + 4), optionalHeader.MajorImageVersion);
         Console.WriteLine(Program.GetVersion(optionalHeader.MajorImageVersion, optionalHeader.MinorImageVersion, null));
-        Console.WriteLine("{0}{1:X4}", "MinorImageVersion".PadRight(pad + 4), optionalHeader.MinorImageVersion);
+        Console.WriteLine("{0}{1:X4}", "Minor image version".PadRight(pad + 4), optionalHeader.MinorImageVersion);
         
-        Console.Write("{0}{1,-7:X4}", "MajorSubsystemVersion".PadRight(pad + 4), optionalHeader.MajorSubsystemVersion);
+        Console.Write("{0}{1,-7:X4}", "Major subsystem version".PadRight(pad + 4), optionalHeader.MajorSubsystemVersion);
         Console.WriteLine(Program.GetVersion(optionalHeader.MajorSubsystemVersion, optionalHeader.MinorSubsystemVersion, null));
-        Console.WriteLine("{0}{1:X4}", "MinorSubsystemVersion".PadRight(pad + 4), optionalHeader.MinorSubsystemVersion);
+        Console.WriteLine("{0}{1:X4}", "Minor subsystem version".PadRight(pad + 4), optionalHeader.MinorSubsystemVersion);
         
-        Console.WriteLine("{0}{1:X8}", "Win32VersionValue".PadRight(pad), optionalHeader.Win32VersionValue);
-        Console.WriteLine("{0}{1:X8}", "SizeOfImage".PadRight(pad), optionalHeader.SizeOfImage);
-        Console.WriteLine("{0}{1:X8}", "SizeOfHeaders".PadRight(pad), optionalHeader.SizeOfHeaders);
-        Console.WriteLine("{0}{1:X8}", "CheckSum".PadRight(pad), optionalHeader.CheckSum);
+        Console.WriteLine("{0}{1:X8}", "Win32 version value".PadRight(pad), optionalHeader.Win32VersionValue);
+        Console.WriteLine("{0}{1:X8}", "Size of image".PadRight(pad), optionalHeader.SizeOfImage);
+        Console.WriteLine("{0}{1:X8}", "Size of headers".PadRight(pad), optionalHeader.SizeOfHeaders);
+        Console.WriteLine("{0}{1:X8}", "Checksum".PadRight(pad), optionalHeader.CheckSum);
         
         Console.Write("{0}{1,-7:X4}", "Subsystem".PadRight(pad + 4), (ushort)(optionalHeader.Subsystem));
         Console.WriteLine("{0}", Program.s_subsystems.GetValueOrDefault(optionalHeader.Subsystem, string.Empty));
 
         bool firstTime = true;
-        Console.Write("{0}{1,-7:X4}", "DllCharacteristics".PadRight(pad + 4), (ushort)(optionalHeader.DllCharacteristics));
+        Console.Write("{0}{1,-7:X4}", "DLL Characteristics".PadRight(pad + 4), (ushort)(optionalHeader.DllCharacteristics));
         foreach (DllCharacteristics flag in Enum.GetValues<DllCharacteristics>()) {
             if ((optionalHeader.DllCharacteristics & flag) == 0) continue;
             if (!firstTime) Console.Write("\n{0}", string.Empty.PadRight(pad + 11));
@@ -341,24 +350,24 @@ internal class Program {
         }
         Console.WriteLine();
 
-        Console.Write("SizeOfStackReserve".PadRight(defaultPad));
+        Console.Write("Size of stack reserve".PadRight(defaultPad));
         if (optionalHeader.Magic == OptionalHeader.Pe32PlusSignature) Console.WriteLine("{0:X16}", optionalHeader.SizeOfStackReserve);
         else Console.WriteLine("{0:X8}", (uint)(optionalHeader.SizeOfStackReserve));
 
-        Console.Write("SizeOfStackCommit".PadRight(defaultPad));
+        Console.Write("Size of stack commit".PadRight(defaultPad));
         if (optionalHeader.Magic == OptionalHeader.Pe32PlusSignature) Console.WriteLine("{0:X16}", optionalHeader.SizeOfStackCommit);
         else Console.WriteLine("{0:X8}", (uint)(optionalHeader.SizeOfStackCommit));
 
-        Console.Write("SizeOfHeapReserve".PadRight(defaultPad));
+        Console.Write("Size of heap reserve".PadRight(defaultPad));
         if (optionalHeader.Magic == OptionalHeader.Pe32PlusSignature) Console.WriteLine("{0:X16}", optionalHeader.SizeOfHeapReserve);
         else Console.WriteLine("{0:X8}", (uint)(optionalHeader.SizeOfHeapReserve));
 
-        Console.Write("SizeOfHeapCommit".PadRight(defaultPad));
+        Console.Write("Size of heap commit".PadRight(defaultPad));
         if (optionalHeader.Magic == OptionalHeader.Pe32PlusSignature) Console.WriteLine("{0:X16}", optionalHeader.SizeOfHeapCommit);
         else Console.WriteLine("{0:X8}", (uint)(optionalHeader.SizeOfHeapCommit));
 
-        Console.WriteLine("{0}{1:X8}", "LoaderFlags".PadRight(pad), optionalHeader.LoaderFlags);
-        Console.WriteLine("{0}{1:X8}", "NumberOfRvaAndSizes".PadRight(pad), optionalHeader.NumberOfRvaAndSizes);
+        Console.WriteLine("{0}{1:X8}", "Loader flags".PadRight(pad), optionalHeader.LoaderFlags);
+        Console.WriteLine("{0}{1:X8}", "Number of RVA and sizes".PadRight(pad), optionalHeader.NumberOfRvaAndSizes);
         Console.WriteLine();
 
         int longestName = 0;
@@ -422,21 +431,21 @@ internal class Program {
         
         foreach (SectionHeader section in sections) {
 
-            Console.WriteLine("   {0,-30}{1}", "Name", section.Name);
-            Console.WriteLine("   {0,-30}{1:X8}", "PhysicalAddress/VirtualSize", section.VirtualSize);
-            Console.WriteLine("   {0,-30}{1:X8}", "VirtualAddress", section.VirtualAddress);
-            Console.WriteLine("   {0,-30}{1:X8}", "SizeOfRawData", section.SizeOfRawData);
-            Console.WriteLine("   {0,-30}{1:X8}", "PointerToRawData", section.PointerToRawData);
-            Console.WriteLine("   {0,-30}{1:X8}", "PointerToRelocations", section.PointerToRelocations);
-            Console.WriteLine("   {0,-30}{1:X8}", "PointerToLinenumbers", section.PointerToLinenumbers);
-            Console.WriteLine("   {0,-34}{1:X4}", "NumberOfRelocations", section.NumberOfRelocations);
-            Console.WriteLine("   {0,-34}{1:X4}", "NumberOfLinenumbers", section.NumberOfLinenumbers);
+            Console.WriteLine("   {0,-34}{1}", "Name", section.Name);
+            Console.WriteLine("   {0,-34}{1:X8}", "Physical address / virtual size", section.VirtualSize);
+            Console.WriteLine("   {0,-34}{1:X8}", "Virtual address", section.VirtualAddress);
+            Console.WriteLine("   {0,-34}{1:X8}", "Size of raw data", section.SizeOfRawData);
+            Console.WriteLine("   {0,-34}{1:X8}", "Pointer to raw data", section.PointerToRawData);
+            Console.WriteLine("   {0,-34}{1:X8}", "Pointer to relocations", section.PointerToRelocations);
+            Console.WriteLine("   {0,-34}{1:X8}", "Pointer to linenumbers", section.PointerToLinenumbers);
+            Console.WriteLine("   {0,-38}{1:X4}", "Number of relocations", section.NumberOfRelocations);
+            Console.WriteLine("   {0,-38}{1:X4}", "Number of linenumbers", section.NumberOfLinenumbers);
             
             bool firstTime = true;
-            Console.Write("   {0,-30}{1,-11:X8}", "Characteristics", (uint)(section.Characteristics));
+            Console.Write("   {0,-34}{1,-11:X8}", "Characteristics", (uint)(section.Characteristics));
             foreach (SectionCharacteristics flag in Enum.GetValues<SectionCharacteristics>()) {
                 if ((section.Characteristics & flag) == 0) continue;
-                if (!firstTime) Console.Write("\n{0}", string.Empty.PadRight(44));
+                if (!firstTime) Console.Write("\n{0}", string.Empty.PadRight(48));
                 Console.Write("- {0,-11:X8}{1}", (uint)(flag), Program.s_sectionCharacteristics.GetValueOrDefault(flag, string.Empty));
                 firstTime = false;
             }
@@ -451,17 +460,17 @@ internal class Program {
 
         Console.WriteLine("\tExport directory\n");
 
-        Console.WriteLine("{0,-24}{1:X8}", "Characteristics", exportDirectory.Characteristics);
-        Console.WriteLine("{0,-24}{1:X8}", "TimeDateStamp", exportDirectory.TimeDateStamp);
-        Console.WriteLine("{0,-28}{1:X4}", "MajorVersion", exportDirectory.MajorVersion);
-        Console.WriteLine("{0,-28}{1:X4}", "MinorVersion", exportDirectory.MinorVersion);
-        Console.WriteLine("{0,-24}{1,-11:X8}{2}", "Name", exportDirectory.Name.RVA, exportDirectory.Name.Name);
-        Console.WriteLine("{0,-24}{1:X8}", "Base", exportDirectory.Base);
-        Console.WriteLine("{0,-24}{1:X8}", "NumberOfFunctions", exportDirectory.NumberOfFunctions);
-        Console.WriteLine("{0,-24}{1:X8}", "NumberOfNames", exportDirectory.NumberOfNames);
-        Console.WriteLine("{0,-24}{1:X8}", "AddressOfFunctions", exportDirectory.AddressOfFunctions);
-        Console.WriteLine("{0,-24}{1:X8}", "AddressOfNames", exportDirectory.AddressOfNames);
-        Console.WriteLine("{0,-24}{1:X8}", "AddressOfNameOrdinals", exportDirectory.AddressOfNameOrdinals);
+        Console.WriteLine("{0,-27}{1:X8}", "Characteristics", exportDirectory.Characteristics);
+        Console.WriteLine("{0,-27}{1:X8}", "Time date stamp", exportDirectory.TimeDateStamp);
+        Console.WriteLine("{0,-31}{1:X4}", "Major version", exportDirectory.MajorVersion);
+        Console.WriteLine("{0,-31}{1:X4}", "Minor version", exportDirectory.MinorVersion);
+        Console.WriteLine("{0,-27}{1,-11:X8}{2}", "Name", exportDirectory.Name.RVA, exportDirectory.Name.Name);
+        Console.WriteLine("{0,-27}{1:X8}", "Base", exportDirectory.Base);
+        Console.WriteLine("{0,-27}{1:X8}", "Number of functions", exportDirectory.NumberOfFunctions);
+        Console.WriteLine("{0,-27}{1:X8}", "Number of names", exportDirectory.NumberOfNames);
+        Console.WriteLine("{0,-27}{1:X8}", "Address of functions", exportDirectory.AddressOfFunctions);
+        Console.WriteLine("{0,-27}{1:X8}", "Address of names", exportDirectory.AddressOfNames);
+        Console.WriteLine("{0,-27}{1:X8}", "Address of name ordinals", exportDirectory.AddressOfNameOrdinals);
         Console.WriteLine();
 
         if (exportDirectory.Exports == null) return;
@@ -498,11 +507,11 @@ internal class Program {
 
         foreach ((string _, ImportedLibrary import) in importDirectory.Imports) {
 
-            Console.WriteLine("   {0,-37}{1:X8}", "Characteristics/OriginalFirstThunk", import.Characteristics);
-            Console.WriteLine("   {0,-37}{1:X8}", "TimeDateStamp", import.TimeDateStamp);
-            Console.WriteLine("   {0,-37}{1:X8}", "ForwarderChain", import.ForwarderChain);
-            Console.WriteLine("   {0,-37}{1,-11:X8}{2}", "Name", import.Name.RVA, import.Name.Name ?? string.Empty);
-            Console.WriteLine("   {0,-37}{1:X8}", "FirstThunk", import.FirstThunk);
+            Console.WriteLine("   {0,-41}{1:X8}", "Characteristics / Original first thunk", import.Characteristics);
+            Console.WriteLine("   {0,-41}{1:X8}", "Time date stamp", import.TimeDateStamp);
+            Console.WriteLine("   {0,-41}{1:X8}", "Forwarder chain", import.ForwarderChain);
+            Console.WriteLine("   {0,-41}{1,-11:X8}{2}", "Name", import.Name.RVA, import.Name.Name ?? string.Empty);
+            Console.WriteLine("   {0,-41}{1:X8}", "First thunk", import.FirstThunk);
             Console.WriteLine();
 
             if (import.Imports == null) continue;
@@ -527,12 +536,12 @@ internal class Program {
 
         Console.WriteLine("\tResource directory\n");
 
-        Console.WriteLine("{0,-23}{1:X8}", "Characteristics", resourceDirectory.Characteristics);
-        Console.WriteLine("{0,-23}{1:X8}", "TimeDateStamp", resourceDirectory.TimeDateStamp);
-        Console.WriteLine("{0,-27}{1:X4}", "MajorVersion", resourceDirectory.MajorVersion);
-        Console.WriteLine("{0,-27}{1:X4}", "MinorVersion", resourceDirectory.MinorVersion);
-        Console.WriteLine("{0,-23}{1:X8}", "NumberOfNamedEntries", resourceDirectory.NumberOfNamedEntries);
-        Console.WriteLine("{0,-23}{1:X8}", "NumberOfIdEntries", resourceDirectory.NumberOfIdEntries);
+        Console.WriteLine("{0,-26}{1:X8}", "Characteristics", resourceDirectory.Characteristics);
+        Console.WriteLine("{0,-26}{1:X8}", "Time date stamp", resourceDirectory.TimeDateStamp);
+        Console.WriteLine("{0,-30}{1:X4}", "Major version", resourceDirectory.MajorVersion);
+        Console.WriteLine("{0,-30}{1:X4}", "Minor version", resourceDirectory.MinorVersion);
+        Console.WriteLine("{0,-26}{1:X8}", "Number of named entries", resourceDirectory.NumberOfNamedEntries);
+        Console.WriteLine("{0,-26}{1:X8}", "Number of ID entries", resourceDirectory.NumberOfIdEntries);
         Console.WriteLine();
 
     }
@@ -622,6 +631,93 @@ internal class Program {
                 }
 
             }
+
+        }
+
+        Console.WriteLine();
+
+    }
+
+    private static Dictionary<DebugType, string> s_debugTypes = new Dictionary<DebugType, string>() {
+
+        { DebugType.CodeView, "CodeView" },
+    
+    };
+
+    private static void Inspect(DebugDirectory debug) {
+
+        Console.WriteLine("\tDebug directory\n");
+
+        if (debug.Entries == null) return;
+
+        foreach (DebugDirectoryEntry entry in debug.Entries) {
+
+            Console.WriteLine("   {0,-22}{1:X8}", "Characteristics", entry.Characteristics);
+            Console.WriteLine("   {0,-22}{1:X8}", "Time date stamp", entry.TimeDateStamp);
+            Console.WriteLine("   {0,-26}{1:X4}", "Major version", entry.MajorVersion);
+            Console.WriteLine("   {0,-26}{1:X4}", "Minor version", entry.MinorVersion);
+            
+            Console.Write("   {0,-22}{1,-11:X8}", "Type", (int)(entry.Type));
+            Console.WriteLine("{0}", Program.s_debugTypes.GetValueOrDefault(entry.Type, string.Empty));
+
+            Console.WriteLine("   {0,-22}{1:X8}", "Size of data", entry.SizeOfData);
+            Console.WriteLine("   {0,-22}{1:X8}", "Address of raw data", entry.AddressOfRawData);
+            Console.WriteLine("   {0,-22}{1:X8}", "Pointer to raw data", entry.PointerToRawData);
+            Console.WriteLine();
+
+            if (entry.DebugInformation != null) {
+                Program.InspectDebugInfo(entry.DebugInformation);
+            }
+
+        }
+
+    }
+
+    private static void InspectDebugInfo(DebugInfo info) {
+
+        if (info is CodeViewInfo cv) {
+
+            Console.WriteLine("      {0,-15}{1}", "Signature", cv.Signature);
+            Console.WriteLine("      {0,-15}{1}", "GUID", cv.Guid.ToString().ToUpper());
+            Console.WriteLine("      {0,-15}{1:X8}", "Age", cv.Age);
+            Console.WriteLine("      {0,-15}{1}", "PDB filename", cv.PdbFilename);
+            Console.WriteLine();
+
+        }
+
+    }
+
+    private static void Inspect(DelayImportDirectory delayImportDirectory) {
+
+        Console.WriteLine("\tDelay load import directory\n");
+
+        if (delayImportDirectory.Imports == null) return;
+
+        foreach ((string _, DelayImportedLibrary import) in delayImportDirectory.Imports) {
+
+            Console.WriteLine("   {0,-29}{1:X8}", "Attributes", import.AllAttributes);
+            Console.WriteLine("   {0,-29}{1,-11:X8}{2}", "DLL name", import.DllName.RVA, import.DllName.Name);
+            Console.WriteLine("   {0,-29}{1:X8}", "Module handle", import.ModuleHandleRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Import address table", import.ImportAddressTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Import name table", import.ImportNameTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Bound import address table", import.BoundImportAddressTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Unload information table", import.UnloadInformationTableRVA);
+            Console.WriteLine("   {0,-29}{1:X8}", "Time date stamp", import.TimeDateStamp);
+            Console.WriteLine();
+
+            if (import.Imports == null) continue;
+
+            Console.WriteLine("      Ord.   Hint   Name\n");
+
+            foreach (ImportedFunction fn in import.Imports) {
+
+                Console.Write("      {0,-7:X4}", fn.Ordinal.HasValue ? fn.Ordinal.Value : string.Empty);
+                Console.Write("{0,-7:X4}", fn.Hint.HasValue ? fn.Hint.Value : string.Empty);
+                Console.WriteLine(fn.Name ?? string.Empty);
+
+            }
+
+            Console.WriteLine();
 
         }
 
